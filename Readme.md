@@ -11,4 +11,7 @@ To get started with Project Livi, clone the repository and open the project in y
 Project Livi provides a simple and intuitive interface for interacting with linked lists. You can add nodes to the list, delete nodes from the list, and search for nodes in the list. The visualizer will graphically display these operations, helping you understand how linked lists work.
 
 ## Walkthrough
-watch the video in repository
+watch the video for walkthrough
+
+https://github.com/ashish-nagmoti/LiVi/assets/135442863/38661aa1-63fb-4c2b-95c4-887d15fb838b
+
