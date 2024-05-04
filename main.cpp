@@ -5,14 +5,24 @@
 class Node
 {
 public:
-    sf::CircleShape shape;
+    sf::RectangleShape shape;
+    sf::RectangleShape divider;
     sf::Text text;
+    sf::Text endText;
     Node *next;
+    sf::Font font; // Add the missing font member variable
 
-    Node(float radius = 20.f) : shape(radius)
+    Node(float width = 60.f, float height = 30.f) : shape(sf::Vector2f(width, height)), divider(sf::Vector2f(2.f, height))
     {
         shape.setFillColor(sf::Color::Blue);
+        divider.setFillColor(sf::Color::White);
         next = nullptr;
+
+        font.loadFromFile("./src/t.ttf");     // Initialize the font
+        endText.setFont(font);                // Set the font
+        endText.setString("X");               // Set the string to 'X'
+        endText.setCharacterSize(30);         // Set the character size
+        endText.setFillColor(sf::Color::Red); // Set the fill color
     }
 };
 
@@ -45,25 +55,23 @@ public:
         node->text.setCharacterSize(30);
         node->text.setFillColor(sf::Color::White);
 
-        if (head == nullptr || std::stoi(head->text.getString().toAnsiString()) >= std::stoi(value))
+        if (head == nullptr)
         {
-
-            node->next = head;
             head = node;
         }
         else
         {
-            // Find the first node with a greater value
+            // Find the last node
             Node *current = head;
-            while (current->next != nullptr && std::stoi(current->next->text.getString().toAnsiString()) < std::stoi(value))
+            while (current->next != nullptr)
             {
                 current = current->next;
             }
 
-            // Insert the new node after the found node
-            node->next = current->next;
+            // Add the new node at the end of the list
             current->next = node;
         }
+
         nodes.clear();
         Node *current = head;
         while (current != nullptr)
@@ -110,23 +118,35 @@ public:
     {
         for (size_t i = 0; i < nodes.size(); ++i)
         {
-            nodes[i]->shape.setPosition(100.f + i * 60.f, 200.f);
+            nodes[i]->shape.setPosition(100.f + i * 100.f, 200.f);
+            nodes[i]->divider.setPosition(nodes[i]->shape.getPosition().x + nodes[i]->shape.getSize().x / 2, nodes[i]->shape.getPosition().y);
             sf::FloatRect textRect = nodes[i]->text.getLocalBounds();
             nodes[i]->text.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
-            nodes[i]->text.setPosition(sf::Vector2f(nodes[i]->shape.getPosition().x + nodes[i]->shape.getRadius(), nodes[i]->shape.getPosition().y + nodes[i]->shape.getRadius()));
+            nodes[i]->text.setPosition(sf::Vector2f(nodes[i]->shape.getPosition().x + nodes[i]->shape.getSize().x / 4, nodes[i]->shape.getPosition().y + nodes[i]->shape.getSize().y / 2));
             window.draw(nodes[i]->shape);
+            window.draw(nodes[i]->divider);
+            if (i == nodes.size() - 1)
+            {
+                sf::FloatRect dividerRect = nodes[i]->divider.getGlobalBounds();
+            sf::FloatRect endTextRect = nodes[i]->endText.getLocalBounds();
+
+            nodes[i]->endText.setOrigin(endTextRect.left + endTextRect.width / 223.5f, endTextRect.top + endTextRect.height / 2.0f);
+            nodes[i]->endText.setPosition(dividerRect.left + dividerRect.width / 228.0f, dividerRect.top + dividerRect.height / 2.0f);
+
+            window.draw(nodes[i]->endText);
+            }
             window.draw(nodes[i]->text);
 
-            // Draw an arrow 
+            // Draw an arrow
             if (i < nodes.size() - 1)
             {
                 sf::VertexArray line(sf::Lines, 2);
-                line[0].position = nodes[i]->shape.getPosition() + sf::Vector2f(nodes[i]->shape.getRadius(), nodes[i]->shape.getRadius());
-                line[1].position = nodes[i + 1]->shape.getPosition() + sf::Vector2f(nodes[i + 1]->shape.getRadius(), nodes[i + 1]->shape.getRadius());
+                line[0].position = nodes[i]->shape.getPosition() + sf::Vector2f(nodes[i]->shape.getSize().x, nodes[i]->shape.getSize().y / 2);
+                line[1].position = nodes[i + 1]->shape.getPosition() + sf::Vector2f(0, nodes[i + 1]->shape.getSize().y / 2);
                 window.draw(line);
             }
 
-            // Draw an arrow and a label 
+            // Draw an arrow and a label
             if (i == 0)
             {
                 sf::VertexArray arrow(sf::Lines, 2);
@@ -134,7 +154,7 @@ public:
                 arrow[1].position = nodes[i]->shape.getPosition();
                 window.draw(arrow);
 
-                sf::Text label("Root", font, 20);
+                sf::Text label("Head", font, 20);
                 label.setFillColor(sf::Color::Red);
                 label.setPosition(arrow[0].position + sf::Vector2f(-40.f, -30.f));
                 window.draw(label);
@@ -143,7 +163,7 @@ public:
             // Draw a special marker for the node that's currently being searched
             if (!searching)
             {
-                nodes[i]->shape.setFillColor(sf::Color::Blue); 
+                nodes[i]->shape.setFillColor(sf::Color::Blue);
             }
             if (searching && i == searchIndex)
             {
@@ -154,14 +174,14 @@ public:
                         nodes[i]->shape.setFillColor(sf::Color::Green);
                         std::cout << "Element found" << std::endl;
                         searching = false;
-                        found = true;          
-                        foundPosition = i + 1; 
+                        found = true;
+                        foundPosition = i + 1;
                         foundClock.restart();
                     }
                     else
                     {
-                        nodes[i]->shape.setFillColor(sf::Color::Red); 
-                        searchIndex++;                               
+                        nodes[i]->shape.setFillColor(sf::Color::Red);
+                        searchIndex++;
 
                         if (searchIndex >= nodes.size())
                         {
@@ -177,19 +197,19 @@ public:
                 }
             }
         }
-        if (found && foundClock.getElapsedTime().asSeconds() <= 10.0f)
-        { 
+        if (found && foundClock.getElapsedTime().asSeconds() <= 3.0f)
+        {
             sf::RectangleShape rectangle(sf::Vector2f(400.f, 100.f));
             rectangle.setFillColor(sf::Color::White);
             rectangle.setPosition(window.getSize().x / 2 - rectangle.getSize().x / 2, window.getSize().y / 2 - rectangle.getSize().y / 2);
             window.draw(rectangle);
-           
+
             sf::Text text("Element found at position " + std::to_string(foundPosition) + "!", font, 20);
             text.setFillColor(sf::Color::Black);
             text.setPosition(rectangle.getPosition().x + rectangle.getSize().x / 2 - text.getLocalBounds().width / 2, rectangle.getPosition().y + rectangle.getSize().y / 2 - text.getLocalBounds().height / 2);
             window.draw(text);
         }
-        else if (dis == 0 && nfoundClock.getElapsedTime().asSeconds() <= 5.0f && !found)
+        else if (dis == 0 && nfoundClock.getElapsedTime().asSeconds() <= 3.0f && !found)
         {
             // Draw a rectangle
             sf::RectangleShape rectangle(sf::Vector2f(200.f, 100.f));
@@ -215,7 +235,7 @@ int main()
 
     sf::Text inputText;
     sf::Font font;
-    font.loadFromFile("./src/t.ttf"); 
+    font.loadFromFile("./src/t.ttf");
     inputText.setFont(font);
     inputText.setCharacterSize(20);
     inputText.setFillColor(sf::Color::White);
@@ -245,11 +265,11 @@ int main()
             else if (event.type == sf::Event::TextEntered)
             {
                 if (event.text.unicode == '\b' && !input.empty())
-                { 
+                {
                     input.pop_back();
                 }
                 else if (event.text.unicode < 128)
-                { 
+                {
                     input += static_cast<char>(event.text.unicode);
                 }
                 inputText.setString(input);
@@ -257,20 +277,20 @@ int main()
             else if (event.type == sf::Event::KeyPressed)
             {
                 if (event.key.code == sf::Keyboard::A)
-                { 
+                {
                     list.addNode(input);
                     input.clear();
                 }
                 if (event.key.code == sf::Keyboard::S)
                 {
-                    
+
                     list.search(input);
                     input.clear();
                     window.display();
                 }
                 if (event.key.code == sf::Keyboard::D)
                 {
-                    
+
                     list.deleteNode(input);
                     input.clear();
                 }
